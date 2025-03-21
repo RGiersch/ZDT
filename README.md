@@ -1,1 +1,1 @@
-# VSE
+# ZDT abgabe: benötigt eine lauffähige version von ComfyUI um zu Funktionieren

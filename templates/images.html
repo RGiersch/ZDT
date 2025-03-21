@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Postkarten erstellung</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 750px; /* Größere Box für Gruppierung */
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 15px;
+            padding: 10px;
+            display: block;
+            resize: none;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+        select, button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        #image-container {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            width: 728px;  /* Skaliert für 910x655 */
+            height: 524px; /* Beibehaltung des Seitenverhältnisses */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #eee;
+            overflow: hidden;
+        }
+        #image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        #download-btn {
+             display: none; /* Anfangs versteckt */
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            margin-top: 15px; /* Abstand zum Bild */
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Postkarte erstellen</h2>
+        <textarea id="prompt" placeholder="Hier Bilbeschreibung eingeben"></textarea>
+        <select id="resolution">
+            <option value="schnell">schnell</option>
+            <option value="qualität">qualität</option>
+            <option value="hQualität">hohe qualität (langsam)</option>
+        </select>
+        <button onclick="generateImage()">Bild Generieren</button>
+        <div id="image-container"></div>
+        <button id="download-btn" onclick="downloadImage()">Speichern</button>
+    </div>
+
+    <script>
+        function generateImage() {
+            const prompt = document.getElementById("prompt").value;
+            const resolution = document.getElementById("resolution").value;
+            const downloadBtn = document.getElementById("download-btn");
+            
+            if (!prompt) {
+                alert("Please enter a prompt.");
+                return;
+            }
+            
+            document.getElementById("image-container").innerHTML = "<p>Generating image...</p>";
+            
+            fetch('/image/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    prompt: prompt,
+                    resolution: resolution
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById("image-container").innerHTML = `<p>Error: ${data.error}</p>`;
+                } else {
+                    const timestamp = new Date().getTime();
+                    const imageUrl = `/generated_image.png?timestamp=${timestamp}`;
+
+                    document.getElementById("image-container").innerHTML = `<img src="${imageUrl}" alt="Generated Image">`;
+
+                    downloadBtn.style.display = "block"; // Download-Button sichtbar machen
+                    downloadBtn.setAttribute("data-url", imageUrl); // URL speichern
+                }
+            })
+            .catch(error => {
+                document.getElementById("image-container").innerHTML = `<p>Error: ${error}</p>`;
+            });
+        }
+
+        function downloadImage() {
+            const downloadBtn = document.getElementById("download-btn");
+            const imageUrl = downloadBtn.getAttribute("data-url");
+
+            if (!imageUrl) return;
+
+            const link = document.createElement("a");
+            link.href = imageUrl;
+            link.download = "generated_image.png";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
